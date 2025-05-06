@@ -1,0 +1,19 @@
+{
+  "name": "color-analyzer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot server.ts",
+    "start": "bun server.ts",
+    "build": "bun build server.ts --outdir=dist"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
+    "openai": "^4.97.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.0.0",
+    "typescript": "^5.0.0"
+  }
+}
