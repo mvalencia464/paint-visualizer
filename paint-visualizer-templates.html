@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paint Visualizer with Style Templates</title>
+    <style>
+      :root {
+        --primary-color: #4d6e5b;
+        --primary-hover: #3d5a4c;
+        --bg-color: #f5f7f9;
+        --text-color: #333;
+        --border-color: #ddd;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #333;
+      }
+
+      p {
+        margin-bottom: 1.5rem;
+        color: #666;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2rem;
+      }
+
+      @media (max-width: 768px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: #444;
+      }
+
+      .upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .upload-area:hover,
+      .upload-area.dragover {
+        border-color: var(--primary-color);
+        background-color: rgba(77, 110, 91, 0.05);
+      }
+
+      .upload-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .preview-container {
+        position: relative;
+        margin-top: 1rem;
+      }
+
+      .preview-image {
+        width: 100%;
+        border-radius: 8px;
+        display: none;
+      }
+
+      .remove-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .palette-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .palette-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .palette-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .palette-card.selected {
+        box-shadow: 0 0 0 3px var(--primary-color);
+      }
+
+      .palette-image {
+        height: 120px;
+        width: 100%;
+        object-fit: cover;
+      }
+
+      .palette-info {
+        padding: 1rem;
+      }
+
+      .palette-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .palette-brand {
+        font-size: 0.75rem;
+        color: #666;
+      }
+
+      .color-swatches {
+        display: flex;
+        margin-top: 0.5rem;
+      }
+
+      .color-swatch {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+
+      .result-container {
+        margin-top: 1.5rem;
+      }
+
+      .color-palette {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .color-swatch-large {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      .color-swatch-large:hover {
+        transform: scale(1.05);
+      }
+
+      .color-info {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        font-weight: 500;
+        color: #666;
+      }
+
+      .spinner {
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 3px solid var(--primary-color);
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        padding: 1rem;
+        background-color: #fee;
+        border-left: 4px solid #f66;
+        color: #c33;
+        margin-top: 1rem;
+        border-radius: 4px;
+      }
+
+      .tabs {
+        display: flex;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .tab {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+      }
+
+      .tab.active {
+        border-bottom-color: var(--primary-color);
+        color: var(--primary-color);
+        font-weight: 500;
+      }
+
+      .section-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .description {
+        color: #666;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+      }
+
+      .btn-icon {
+        margin-right: 0.5rem;
+      }
+
+      .analysis-results {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .detected-colors {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+      }
+
+      .detected-color {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      .detected-color:hover {
+        transform: scale(1.05);
+      }
+
+      .detected-color-swatch {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        margin-bottom: 0.25rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .detected-color-info {
+        text-align: center;
+        font-size: 0.8rem;
+        color: #555;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .analysis-text {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #555;
+        line-height: 1.5;
+      }
+
+      .prompt-container {
+        margin-top: 1rem;
+      }
+
+      .prompt-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 0.5rem;
+      }
+
+      .prompt-textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .prompt-textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(77, 110, 91, 0.2);
+      }
+
+      .status-message {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background-color: #f0f7f4;
+        color: var(--primary-color);
+      }
+
+      .generated-image-wrapper {
+        margin: 1rem 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .generated-image {
+        width: 100%;
+        display: block;
+      }
+
+      .generation-info {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Paint Visualizer with Style Templates</h1>
+      <p>
+        Transform your space with new paint colors using our style templates.
+        Upload a photo and select your preferred color palette to see the
+        transformation.
+      </p>
+
+      <div class="grid">
+        <div class="left-column">
+          <div class="card">
+            <h2>1. Upload Your Room Photo</h2>
+            <div class="upload-area" id="upload-area">
+              <div class="upload-icon">📷</div>
+              <p>Drag & drop your image here or click to browse</p>
+              <input
+                type="file"
+                id="file-input"
+                accept="image/*"
+                style="display: none"
+              />
+            </div>
+
+            <div class="preview-container">
+              <img id="preview-image" class="preview-image" alt="Preview" />
+              <button
+                id="remove-image"
+                class="remove-btn"
+                style="display: none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div id="error-message" class="error" style="display: none"></div>
+
+            <div class="prompt-container" style="margin-top: 1.5rem">
+              <h3>Custom Visualization (Optional)</h3>
+              <p class="description">
+                Generate an AI visualization with custom instructions without
+                selecting a palette.
+              </p>
+              <textarea
+                id="custom-prompt-top"
+                class="prompt-textarea"
+                placeholder="Describe the colors or style you want to apply to this space..."
+                rows="3"
+              ></textarea>
+              <div style="margin-top: 1rem">
+                <button id="generate-button-top" class="btn" disabled>
+                  <span class="btn-icon">✨</span> Generate Custom Visualization
+                </button>
+              </div>
+              <div
+                id="generation-status-top"
+                class="status-message"
+                style="display: none"
+              ></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>2. Analyze House Colors with AI</h2>
+            <p class="description">
+              Upload a photo of a house to analyze its current colors using AI.
+            </p>
+
+            <div class="upload-area" id="analyze-upload-area">
+              <div class="upload-icon">🔍</div>
+              <p>Drag & drop a house photo or click to browse</p>
+              <input
+                type="file"
+                id="analyze-file-input"
+                accept="image/*"
+                style="display: none"
+              />
+            </div>
+
+            <div class="preview-container">
+              <img
+                id="analyze-preview-image"
+                class="preview-image"
+                alt="Analysis Preview"
+              />
+              <button
+                id="analyze-remove-image"
+                class="remove-btn"
+                style="display: none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style="margin-top: 1rem">
+              <button id="analyze-button" class="btn" disabled>
+                <span class="btn-icon">🔍</span> Analyze Colors
+              </button>
+            </div>
+
+            <div
+              id="analyze-error-message"
+              class="error"
+              style="display: none"
+            ></div>
+
+            <div
+              id="analysis-results"
+              class="analysis-results"
+              style="display: none"
+            >
+              <h3>Detected Colors</h3>
+              <div class="detected-colors" id="detected-colors"></div>
+              <div class="analysis-text" id="analysis-text"></div>
+            </div>
+          </div>
+
+          <div
+            class="result-container card"
+            style="display: none"
+            id="result-container"
+          >
+            <h2>Color Palette</h2>
+            <div class="color-palette" id="color-palette"></div>
+            <div class="color-info" id="color-info"></div>
+          </div>
+
+          <div
+            class="generated-image-container card"
+            style="display: none"
+            id="generated-image-container"
+          >
+            <h2>AI Generated Visualization</h2>
+            <div class="generated-image-wrapper">
+              <img
+                id="generated-image"
+                class="generated-image"
+                alt="AI Generated Image"
+              />
+            </div>
+            <p class="generation-info" id="generation-info"></p>
+          </div>
+        </div>
+
+        <div class="right-column">
+          <div class="card">
+            <h2>3. Select Your Color Palette</h2>
+
+            <h3 class="section-title">Interior Color Palettes</h3>
+            <div class="palette-grid" id="interior-palette-grid"></div>
+
+            <h3 class="section-title" style="margin-top: 2rem">
+              Exterior Color Palettes
+            </h3>
+            <div class="palette-grid" id="exterior-palette-grid"></div>
+
+            <div style="margin-top: 1.5rem">
+              <button id="apply-palette" class="btn" disabled>
+                Apply Selected Palette
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>4. Generate AI Visualization</h2>
+            <p class="description">
+              Generate an AI visualization of your space with the selected color
+              palette.
+            </p>
+
+            <div class="prompt-container">
+              <label for="custom-prompt" class="prompt-label"
+                >Additional Instructions (Optional)</label
+              >
+              <textarea
+                id="custom-prompt"
+                class="prompt-textarea"
+                placeholder="Add any specific details or requirements for the AI visualization..."
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div style="margin-top: 1.5rem">
+              <button id="generate-button" class="btn" disabled>
+                <span class="btn-icon">✨</span> Generate Visualization
+              </button>
+              <div
+                id="generation-status"
+                class="status-message"
+                style="display: none"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Load the Sherwin Williams colors from JSON
+      async function loadSWColors() {
+        try {
+          const response = await fetch("/src/data/sw_colors.json");
+          if (!response.ok) {
+            throw new Error("Failed to load color data");
+          }
+          return await response.json();
+        } catch (error) {
+          console.error("Error loading SW colors:", error);
+          document.getElementById("error-message").textContent =
+            "Failed to load color data. Please try again later.";
+          document.getElementById("error-message").style.display = "block";
+          return {};
+        }
+      }
+
+      // Define our style templates (similar to palettes.ts)
+      const palettes = [
+        {
+          id: "timeless-whites",
+          title: "Timeless Whites",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/timeless-whites.webp",
+          colors: [
+            { hex: "#DEDACD", name: "Oat Milk", id: "SW9501" },
+            { hex: "#E4DECF", name: "Arrowroote", id: "SW9502" },
+            { hex: "#F6F2E8", name: "Cheviot", id: "SW9503" },
+            { hex: "#EFECE3", name: "Cold Foam", id: "SW9504" },
+            { hex: "#F6F0E5", name: "Frost Bite", id: "SW9505" },
+          ],
+          type: "interior",
+        },
+        {
+          id: "warm-welcoming",
+          title: "Warm & Welcoming",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/warm-welcoming.webp",
+          colors: [
+            { hex: "#E3DBCD", name: "White Sesame", id: "SW9586" },
+            { hex: "#D0C7B7", name: "Mushroom", id: "SW9587" },
+            { hex: "#C8C0B3", name: "High Sierra", id: "SW9588" },
+            { hex: "#DBD5CB", name: "Limewash", id: "SW9589" },
+            { hex: "#DAD2C6", name: "Taupe of the Morning", id: "SW9590" },
+          ],
+          type: "interior",
+        },
+        {
+          id: "pottery-barn",
+          title: "Pottery Barn",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/pottery-barn.webp",
+          colors: [
+            { hex: "#E1D9C6", name: "Warm Winter", id: "SW9506" },
+            { hex: "#DDCFB9", name: "Cream and Sugar", id: "SW9507" },
+            { hex: "#D7C9AE", name: "Natural Wool", id: "SW9508" },
+            { hex: "#E0D4BD", name: "Steamed Chai", id: "SW9509" },
+            { hex: "#C4B9A3", name: "Peace of Mind", id: "SW9510" },
+          ],
+          type: "interior",
+        },
+        {
+          id: "2024-blues-greens",
+          title: "2024 Blues & Greens",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/2024-blues-greens.webp",
+          colors: [
+            { hex: "#DCE2DF", name: "Mantra", id: "SW9631" },
+            { hex: "#CED7D5", name: "Serenely", id: "SW9632" },
+            { hex: "#B6C3C4", name: "Silver Lake", id: "SW9633" },
+            { hex: "#82979B", name: "Morning at Sea", id: "SW9634" },
+            { hex: "#60757A", name: "Stargazer", id: "SW9635" },
+          ],
+          type: "interior",
+        },
+        {
+          id: "traditional",
+          title: "Traditional",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/traditional.webp",
+          colors: [
+            { hex: "#EDE6DA", name: "Dover White", id: "SW6385" },
+            { hex: "#C0B7A4", name: "Gateway Gray", id: "SW7644" },
+            { hex: "#4D6B6F", name: "Mediterranean", id: "SW7617" },
+          ],
+          type: "exterior",
+        },
+        {
+          id: "modern",
+          title: "Modern",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/modern.webp",
+          colors: [
+            { hex: "#9CA3A6", name: "Uncertain Gray", id: "SW6234" },
+            { hex: "#C4C9CD", name: "Evening Shadow", id: "SW7662" },
+            { hex: "#555658", name: "Peppercorn", id: "SW7674" },
+          ],
+          type: "exterior",
+        },
+        {
+          id: "craftsman",
+          title: "Craftsman",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/craftsman.webp",
+          colors: [
+            { hex: "#CB8A42", name: "Eastlake Gold", id: "SW6686" },
+            { hex: "#E8D8BE", name: "Classical White", id: "SW2829" },
+            { hex: "#A89B89", name: "Curio Gray", id: "SW7666" },
+          ],
+          type: "exterior",
+        },
+        {
+          id: "spanish",
+          title: "Spanish",
+          brand: "Sherwin-Williams",
+          image:
+            "https://apdhkbyusjmuyyjdvwbb.supabase.co/storage/v1/object/public/assets/images/spanish.webp",
+          colors: [
+            { hex: "#E9DCC6", name: "Netsuke", id: "SW6194" },
+            { hex: "#908C75", name: "Connected Gray", id: "SW6165" },
+            { hex: "#763F3F", name: "Fiery Brown", id: "SW6055" },
+          ],
+          type: "exterior",
+        },
+      ];
+
+      // Global variables
+      let uploadedImage = null;
+      let analyzeImage = null;
+      let selectedPalette = null;
+      let swColors = {};
+      let detectedColorMatches = [];
+      let isAnalyzing = false;
+      let isGenerating = false;
+
+      // DOM elements - Main upload
+      const uploadArea = document.getElementById("upload-area");
+      const fileInput = document.getElementById("file-input");
+      const previewImage = document.getElementById("preview-image");
+      const removeImageBtn = document.getElementById("remove-image");
+      const errorMessage = document.getElementById("error-message");
+
+      // DOM elements - Palette selection
+      const interiorPaletteGrid = document.getElementById(
+        "interior-palette-grid"
+      );
+      const exteriorPaletteGrid = document.getElementById(
+        "exterior-palette-grid"
+      );
+      const applyPaletteBtn = document.getElementById("apply-palette");
+      const resultContainer = document.getElementById("result-container");
+      const colorPalette = document.getElementById("color-palette");
+      const colorInfo = document.getElementById("color-info");
+
+      // DOM elements - Color analyzer
+      const analyzeUploadArea = document.getElementById("analyze-upload-area");
+      const analyzeFileInput = document.getElementById("analyze-file-input");
+      const analyzePreviewImage = document.getElementById(
+        "analyze-preview-image"
+      );
+      const analyzeRemoveBtn = document.getElementById("analyze-remove-image");
+      const analyzeButton = document.getElementById("analyze-button");
+      const analyzeErrorMessage = document.getElementById(
+        "analyze-error-message"
+      );
+      const analysisResults = document.getElementById("analysis-results");
+      const detectedColors = document.getElementById("detected-colors");
+      const analysisText = document.getElementById("analysis-text");
+
+      // DOM elements - Image generation
+      const customPrompt = document.getElementById("custom-prompt");
+      const generateButton = document.getElementById("generate-button");
+      const generationStatus = document.getElementById("generation-status");
+      const customPromptTop = document.getElementById("custom-prompt-top");
+      const generateButtonTop = document.getElementById("generate-button-top");
+      const generationStatusTop = document.getElementById(
+        "generation-status-top"
+      );
+      const generatedImageContainer = document.getElementById(
+        "generated-image-container"
+      );
+      const generatedImage = document.getElementById("generated-image");
+      const generationInfo = document.getElementById("generation-info");
+
+      // Initialize the application
+      async function init() {
+        // Load Sherwin Williams colors
+        swColors = await loadSWColors();
+
+        // Set up event listeners
+        setupEventListeners();
+
+        // Render both palette grids
+        renderPaletteGrids();
+      }
+
+      // Set up event listeners
+      function setupEventListeners() {
+        // Main upload area
+        uploadArea.addEventListener("click", () => {
+          fileInput.click();
+        });
+        fileInput.addEventListener("change", handleFileSelect);
+        setupDragDrop(uploadArea, fileInput, handleFiles);
+        removeImageBtn.addEventListener("click", removeImage);
+
+        // Color analyzer upload area
+        analyzeUploadArea.addEventListener("click", () => {
+          analyzeFileInput.click();
+        });
+        analyzeFileInput.addEventListener("change", handleAnalyzeFileSelect);
+        setupDragDrop(analyzeUploadArea, analyzeFileInput, handleAnalyzeFiles);
+        analyzeRemoveBtn.addEventListener("click", removeAnalyzeImage);
+        analyzeButton.addEventListener("click", analyzeHouseColors);
+
+        // Palette and generation
+        applyPaletteBtn.addEventListener("click", applyPalette);
+        generateButton.addEventListener("click", generateVisualization);
+        generateButtonTop.addEventListener(
+          "click",
+          generateCustomVisualization
+        );
+
+        // Update generate button states when custom prompts change
+        customPrompt.addEventListener("input", updateGenerateButtonState);
+        customPromptTop.addEventListener("input", updateGenerateButtonTopState);
+      }
+
+      // Helper function to set up drag and drop for an upload area
+      function setupDragDrop(dropArea, input, handleFn) {
+        dropArea.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropArea.classList.add("dragover");
+        });
+
+        dropArea.addEventListener("dragleave", () => {
+          dropArea.classList.remove("dragover");
+        });
+
+        dropArea.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropArea.classList.remove("dragover");
+
+          if (e.dataTransfer.files.length) {
+            handleFn(e.dataTransfer.files);
+          }
+        });
+      }
+
+      // Handle file selection
+      function handleFileSelect(e) {
+        if (e.target.files.length) {
+          handleFiles(e.target.files);
+        }
+      }
+
+      // Handle files (from input or drop)
+      function handleFiles(files) {
+        const file = files[0];
+
+        // Validate file type
+        if (!file.type.match("image.*")) {
+          showError("Please select an image file (JPEG, PNG, etc.)");
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          showError("Image size exceeds 5MB limit");
+          return;
+        }
+
+        // Clear any previous errors
+        hideError();
+
+        // Create a preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+          previewImage.style.display = "block";
+          removeImageBtn.style.display = "flex";
+          uploadedImage = {
+            file: file,
+            preview: e.target.result,
+          };
+
+          // Enable apply button if palette is selected
+          if (selectedPalette) {
+            applyPaletteBtn.disabled = false;
+          }
+
+          // Update the top generate button state
+          updateGenerateButtonTopState();
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Remove the uploaded image
+      function removeImage() {
+        previewImage.src = "";
+        previewImage.style.display = "none";
+        removeImageBtn.style.display = "none";
+        fileInput.value = "";
+        uploadedImage = null;
+        applyPaletteBtn.disabled = true;
+        generateButtonTop.disabled = true;
+        resultContainer.style.display = "none";
+        generatedImageContainer.style.display = "none";
+      }
+
+      // Render both interior and exterior palette grids
+      function renderPaletteGrids() {
+        // Filter palettes by type
+        const interiorPalettes = palettes.filter(
+          (palette) => palette.type === "interior"
+        );
+        const exteriorPalettes = palettes.filter(
+          (palette) => palette.type === "exterior"
+        );
+
+        // Clear the grids
+        interiorPaletteGrid.innerHTML = "";
+        exteriorPaletteGrid.innerHTML = "";
+
+        // Render interior palettes
+        renderPalettesToGrid(interiorPalettes, interiorPaletteGrid);
+
+        // Render exterior palettes
+        renderPalettesToGrid(exteriorPalettes, exteriorPaletteGrid);
+      }
+
+      // Helper function to render palettes to a specific grid
+      function renderPalettesToGrid(palettesToRender, gridElement) {
+        palettesToRender.forEach((palette) => {
+          const card = document.createElement("div");
+          card.className = `palette-card ${
+            selectedPalette?.id === palette.id ? "selected" : ""
+          }`;
+          card.dataset.id = palette.id;
+
+          const html = `
+          <img src="${palette.image}" alt="${
+            palette.title
+          }" class="palette-image">
+          <div class="palette-info">
+            <div class="palette-title">${palette.title}</div>
+            <div class="palette-brand">${palette.brand}</div>
+            <div class="color-swatches">
+              ${palette.colors
+                .map(
+                  (color) => `
+                <div class="color-swatch" style="background-color: ${color.hex};" title="${color.name}"></div>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+        `;
+
+          card.innerHTML = html;
+
+          // Add click event
+          card.addEventListener("click", () => {
+            // Deselect all cards
+            document.querySelectorAll(".palette-card").forEach((c) => {
+              c.classList.remove("selected");
+            });
+
+            // Select this card
+            card.classList.add("selected");
+            selectedPalette = palette;
+
+            // Enable apply button if image is uploaded
+            if (uploadedImage) {
+              applyPaletteBtn.disabled = false;
+            }
+          });
+
+          gridElement.appendChild(card);
+        });
+      }
+
+      // Apply the selected palette
+      function applyPalette() {
+        if (!uploadedImage || !selectedPalette) {
+          return;
+        }
+
+        // Show the result container
+        resultContainer.style.display = "block";
+
+        // Clear previous results
+        colorPalette.innerHTML = "";
+        colorInfo.innerHTML = "";
+
+        // Add color swatches to the palette
+        selectedPalette.colors.forEach((color) => {
+          const swatch = document.createElement("div");
+          swatch.className = "color-swatch-large";
+          swatch.style.backgroundColor = color.hex;
+          swatch.title = `${color.name} (${color.id})`;
+
+          // Get additional color info from the SW colors database
+          const swColor = swColors[color.id];
+
+          swatch.addEventListener("click", () => {
+            colorInfo.innerHTML = `
+            <p><strong>${color.name}</strong> (${color.id})</p>
+            <p>Hex: ${color.hex}</p>
+            ${
+              swColor
+                ? `<p>This is an official Sherwin-Williams color.</p>`
+                : ""
+            }
+          `;
+          });
+
+          colorPalette.appendChild(swatch);
+        });
+
+        // Show info for the first color by default
+        if (selectedPalette.colors.length > 0) {
+          const firstColor = selectedPalette.colors[0];
+          const swColor = swColors[firstColor.id];
+
+          colorInfo.innerHTML = `
+          <p><strong>${firstColor.name}</strong> (${firstColor.id})</p>
+          <p>Hex: ${firstColor.hex}</p>
+          ${swColor ? `<p>This is an official Sherwin-Williams color.</p>` : ""}
+        `;
+        }
+
+        // Scroll to the result container
+        resultContainer.scrollIntoView({ behavior: "smooth" });
+      }
+
+      // Show error message
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = "block";
+      }
+
+      // Hide error message
+      function hideError() {
+        errorMessage.style.display = "none";
+      }
+
+      // Handle file selection for color analyzer
+      function handleAnalyzeFileSelect(e) {
+        if (e.target.files.length) {
+          handleAnalyzeFiles(e.target.files);
+        }
+      }
+
+      // Handle files for color analyzer
+      function handleAnalyzeFiles(files) {
+        const file = files[0];
+
+        // Validate file type
+        if (!file.type.match("image.*")) {
+          showAnalyzeError("Please select an image file (JPEG, PNG, etc.)");
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          showAnalyzeError("Image size exceeds 5MB limit");
+          return;
+        }
+
+        // Clear any previous errors
+        hideAnalyzeError();
+
+        // Create a preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          analyzePreviewImage.src = e.target.result;
+          analyzePreviewImage.style.display = "block";
+          analyzeRemoveBtn.style.display = "flex";
+          analyzeImage = {
+            file: file,
+            preview: e.target.result,
+          };
+
+          // Enable analyze button
+          analyzeButton.disabled = false;
+
+          // Hide previous analysis results
+          analysisResults.style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Remove the analyze image
+      function removeAnalyzeImage() {
+        analyzePreviewImage.src = "";
+        analyzePreviewImage.style.display = "none";
+        analyzeRemoveBtn.style.display = "none";
+        analyzeFileInput.value = "";
+        analyzeImage = null;
+        analyzeButton.disabled = true;
+        analysisResults.style.display = "none";
+        detectedColorMatches = [];
+      }
+
+      // Show error message for analyzer
+      function showAnalyzeError(message) {
+        analyzeErrorMessage.textContent = message;
+        analyzeErrorMessage.style.display = "block";
+      }
+
+      // Hide error message for analyzer
+      function hideAnalyzeError() {
+        analyzeErrorMessage.style.display = "none";
+      }
+
+      // Analyze house colors using GPT-4o
+      async function analyzeHouseColors() {
+        if (!analyzeImage) return;
+
+        try {
+          // Show analyzing state
+          isAnalyzing = true;
+          analyzeButton.disabled = true;
+          analyzeButton.innerHTML = '<div class="spinner"></div> Analyzing...';
+          hideAnalyzeError();
+
+          // Call the API to analyze the image
+          const response = await fetch("/api/analyze", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              image: analyzeImage.preview,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Analysis failed: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+
+          // Process the results
+          detectedColorMatches = data.colors || [];
+          const analysisContent = data.analysis || "No analysis available";
+
+          // Display the results
+          displayAnalysisResults(detectedColorMatches, analysisContent);
+        } catch (error) {
+          console.error("Error analyzing image:", error);
+          showAnalyzeError(error.message || "Failed to analyze image");
+        } finally {
+          // Reset UI state
+          isAnalyzing = false;
+          analyzeButton.disabled = false;
+          analyzeButton.innerHTML =
+            '<span class="btn-icon">🔍</span> Analyze Colors';
+        }
+      }
+
+      // Display analysis results
+      function displayAnalysisResults(colors, analysisContent) {
+        // Clear previous results
+        detectedColors.innerHTML = "";
+        analysisText.innerHTML = "";
+
+        // Add color swatches
+        colors.forEach((color) => {
+          const colorElement = document.createElement("div");
+          colorElement.className = "detected-color";
+
+          const swatch = document.createElement("div");
+          swatch.className = "detected-color-swatch";
+          swatch.style.backgroundColor = color.hex;
+
+          const info = document.createElement("div");
+          info.className = "detected-color-info";
+          info.textContent = `${color.name} (SW${color.code})`;
+
+          colorElement.appendChild(swatch);
+          colorElement.appendChild(info);
+
+          // Add click event to use this color
+          colorElement.addEventListener("click", () => {
+            // Find a palette that contains this color or a similar one
+            findAndSelectPaletteWithColor(color);
+          });
+
+          detectedColors.appendChild(colorElement);
+        });
+
+        // Add analysis text
+        const formattedAnalysis = analysisContent
+          .replace("Color Matches:", "")
+          .replace("Paint Plan:", "<strong>Paint Plan:</strong>")
+          .split("\n")
+          .filter((line) => !line.trim().startsWith("- SW"))
+          .join("<br>");
+
+        analysisText.innerHTML = formattedAnalysis;
+
+        // Show results
+        analysisResults.style.display = "block";
+
+        // Scroll to results
+        analysisResults.scrollIntoView({ behavior: "smooth" });
+      }
+
+      // Find and select a palette that contains a specific color or similar one
+      function findAndSelectPaletteWithColor(color) {
+        // First try to find an exact match
+        let matchedPalette = palettes.find((palette) =>
+          palette.colors.some((c) => c.id === `SW${color.code}`)
+        );
+
+        // If no exact match, find a palette with a similar color
+        if (!matchedPalette) {
+          // Convert the color to RGB for comparison
+          const targetRgb = hexToRgb(color.hex);
+          if (!targetRgb) return;
+
+          // Find the palette with the most similar color
+          let closestDistance = Infinity;
+          let closestPalette = null;
+
+          palettes.forEach((palette) => {
+            palette.colors.forEach((c) => {
+              const rgb = hexToRgb(c.hex);
+              if (rgb) {
+                const distance = colorDistance(targetRgb, rgb);
+                if (distance < closestDistance) {
+                  closestDistance = distance;
+                  closestPalette = palette;
+                }
+              }
+            });
+          });
+
+          matchedPalette = closestPalette;
+        }
+
+        // Select the palette if found
+        if (matchedPalette) {
+          // Deselect all cards
+          document.querySelectorAll(".palette-card").forEach((c) => {
+            c.classList.remove("selected");
+          });
+
+          // Find and select the card
+          const card = document.querySelector(
+            `.palette-card[data-id="${matchedPalette.id}"]`
+          );
+          if (card) {
+            card.classList.add("selected");
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+
+          // Update selected palette
+          selectedPalette = matchedPalette;
+
+          // Enable apply button if image is uploaded
+          if (uploadedImage) {
+            applyPaletteBtn.disabled = false;
+          }
+
+          // Update generate button state
+          updateGenerateButtonState();
+        }
+      }
+
+      // Helper function to convert hex to RGB
+      function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+          ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+            }
+          : null;
+      }
+
+      // Calculate color distance (Euclidean distance in RGB space)
+      function colorDistance(rgb1, rgb2) {
+        return Math.sqrt(
+          Math.pow(rgb1.r - rgb2.r, 2) +
+            Math.pow(rgb1.g - rgb2.g, 2) +
+            Math.pow(rgb1.b - rgb2.b, 2)
+        );
+      }
+
+      // Generate visualization using DALL-E 3
+      async function generateVisualization() {
+        if (!uploadedImage || !selectedPalette) return;
+
+        try {
+          // Show generating state
+          isGenerating = true;
+          generateButton.disabled = true;
+          generateButton.innerHTML =
+            '<div class="spinner"></div> Generating...';
+          generationStatus.textContent =
+            "Creating your visualization. This may take a minute...";
+          generationStatus.style.display = "block";
+
+          // Prepare the prompt
+          const colorNames = selectedPalette.colors
+            .map((c) => `${c.name} (${c.id})`)
+            .join(", ");
+          let prompt = `Transform this ${selectedPalette.type} space using the ${selectedPalette.title} color palette from Sherwin-Williams with these colors: ${colorNames}.`;
+
+          // Add custom instructions if provided
+          if (customPrompt.value.trim()) {
+            prompt += ` ${customPrompt.value.trim()}`;
+          }
+
+          // Call the API to generate the image
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              image: uploadedImage.preview,
+              prompt: prompt,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Generation failed: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+
+          // Display the generated image
+          if (data.image) {
+            generatedImage.src = data.image;
+
+            // Show palette info and custom prompt if provided
+            let infoText = `Generated using the ${selectedPalette.title} palette`;
+            if (customPrompt.value.trim()) {
+              infoText += ` with additional instructions: "${
+                customPrompt.value.trim().length > 80
+                  ? customPrompt.value.trim().substring(0, 80) + "..."
+                  : customPrompt.value.trim()
+              }"`;
+            }
+
+            generationInfo.textContent = infoText;
+            generatedImageContainer.style.display = "block";
+            generatedImageContainer.scrollIntoView({ behavior: "smooth" });
+          } else {
+            throw new Error("No image was generated");
+          }
+        } catch (error) {
+          console.error("Error generating image:", error);
+          generationStatus.textContent = `Error: ${
+            error.message || "Failed to generate image"
+          }`;
+          generationStatus.style.display = "block";
+        } finally {
+          // Reset UI state
+          isGenerating = false;
+          generateButton.disabled = false;
+          generateButton.innerHTML =
+            '<span class="btn-icon">✨</span> Generate Visualization';
+        }
+      }
+
+      // Update generate button state
+      function updateGenerateButtonState() {
+        generateButton.disabled = !(
+          uploadedImage &&
+          selectedPalette &&
+          !isGenerating
+        );
+      }
+
+      // Update generate button top state
+      function updateGenerateButtonTopState() {
+        generateButtonTop.disabled = !(
+          uploadedImage &&
+          customPromptTop.value.trim() &&
+          !isGenerating
+        );
+      }
+
+      // Generate custom visualization without a palette
+      async function generateCustomVisualization() {
+        if (!uploadedImage || !customPromptTop.value.trim()) return;
+
+        try {
+          // Show generating state
+          isGenerating = true;
+          generateButtonTop.disabled = true;
+          generateButtonTop.innerHTML =
+            '<div class="spinner"></div> Generating...';
+          generationStatusTop.textContent =
+            "Creating your visualization. This may take a minute...";
+          generationStatusTop.style.display = "block";
+
+          // Use the custom prompt directly
+          const prompt = customPromptTop.value.trim();
+
+          // Call the API to generate the image
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              image: uploadedImage.preview,
+              prompt: prompt,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Generation failed: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+
+          // Display the generated image
+          if (data.image) {
+            generatedImage.src = data.image;
+            generationInfo.textContent = `Generated using prompt: "${
+              prompt.length > 100 ? prompt.substring(0, 100) + "..." : prompt
+            }"`;
+            generatedImageContainer.style.display = "block";
+            generatedImageContainer.scrollIntoView({ behavior: "smooth" });
+          } else {
+            throw new Error("No image was generated");
+          }
+        } catch (error) {
+          console.error("Error generating custom image:", error);
+          generationStatusTop.textContent = `Error: ${
+            error.message || "Failed to generate image"
+          }`;
+          generationStatusTop.style.display = "block";
+        } finally {
+          // Reset UI state
+          isGenerating = false;
+          generateButtonTop.disabled = false;
+          generateButtonTop.innerHTML =
+            '<span class="btn-icon">✨</span> Generate Custom Visualization';
+        }
+      }
+
+      // Initialize the application
+      init();
+    </script>
+  </body>
+</html>
